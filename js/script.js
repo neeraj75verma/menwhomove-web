@@ -47,12 +47,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Enable the commitment button only after the checkbox is selected.
+```javascript
+  // Enable the commitment button only after the checkbox is selected.
   const form = document.getElementById("commitment-form");
   const checkbox = document.getElementById("commitment-checkbox");
   const submitButton = document.getElementById("commitment-button");
   const success = document.getElementById("commitment-success");
 
   if (form && checkbox && submitButton && success) {
+    const originalButtonText = submitButton.textContent;
+
     const toggleButton = () => {
       submitButton.disabled = !checkbox.checked;
     };
@@ -60,15 +64,42 @@ document.addEventListener("DOMContentLoaded", () => {
     checkbox.addEventListener("change", toggleButton);
     toggleButton();
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       if (!checkbox.checked) {
         return;
       }
 
-      form.classList.add("is-hidden");
-      success.classList.add("is-visible");
+      submitButton.disabled = true;
+      submitButton.textContent = "Submitting...";
+
+      try {
+        const formData = new FormData(form);
+
+        const response = await fetch("/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams(formData).toString(),
+        });
+
+        if (!response.ok) {
+          throw new Error("Form submission failed");
+        }
+
+        form.classList.add("is-hidden");
+        success.classList.add("is-visible");
+
+      } catch (error) {
+        console.error("Membership submission error:", error);
+
+        submitButton.disabled = false;
+        submitButton.textContent = originalButtonText;
+
+        alert("Submission failed. Please try again.");
+      }
     });
   }
-});
+```
